@@ -1,0 +1,16 @@
+apiVersion: v2
+name: java-app-rollout
+description: A Helm chart for Java application with Argo Rollouts support (Canary/Blue-Green)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - java
+  - spring-boot
+  - argo-rollouts
+  - canary
+  - blue-green
+maintainers:
+  - name: DevOps Team
+    email: devops@example.com
+

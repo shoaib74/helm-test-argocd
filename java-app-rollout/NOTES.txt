@@ -1,0 +1,165 @@
+🚀 {{ .Chart.Name }} - {{ .Chart.Version }} has been deployed!
+
+{{- if eq .Values.strategy.type "canary" }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 CANARY DEPLOYMENT STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your application is configured with Canary deployment strategy.
+New versions will gradually receive traffic as defined in your canary steps.
+
+{{- else if eq .Values.strategy.type "blueGreen" }}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵🟢 BLUE-GREEN DEPLOYMENT STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your application is configured with Blue-Green deployment strategy.
+New versions will be deployed to a preview environment before switching traffic.
+
+{{- end }}
+
+📝 Deployment Details:
+  - Release Name:    {{ .Release.Name }}
+  - Namespace:       {{ .Release.Namespace }}
+  - Replicas:        {{ .Values.replicaCount }}
+  - Image:           {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+  - Strategy:        {{ .Values.strategy.type }}
+
+🔗 Services:
+
+{{- if eq .Values.strategy.type "canary" }}
+  • Stable Service:  {{ include "java-app-rollout.fullname" . }}-stable
+  • Canary Service:  {{ include "java-app-rollout.fullname" . }}-canary
+{{- else if eq .Values.strategy.type "blueGreen" }}
+  • Active Service:  {{ include "java-app-rollout.fullname" . }}-stable
+  • Preview Service: {{ include "java-app-rollout.fullname" . }}-preview
+{{- end }}
+
+{{- if .Values.service.stable.type }}
+{{- if eq .Values.service.stable.type "LoadBalancer" }}
+
+⏳ Waiting for LoadBalancer IP...
+  
+  export SERVICE_IP=$(kubectl get svc {{ include "java-app-rollout.fullname" . }}-stable \
+    --namespace {{ .Release.Namespace }} \
+    -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  
+  echo "Application URL: http://$SERVICE_IP"
+
+{{- else if eq .Values.service.stable.type "ClusterIP" }}
+
+🔌 Port Forward to Access Application:
+  
+  kubectl port-forward svc/{{ include "java-app-rollout.fullname" . }}-stable 8080:{{ .Values.service.stable.port }} \
+    --namespace {{ .Release.Namespace }}
+  
+  echo "Application URL: http://localhost:8080"
+
+{{- end }}
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+
+🌐 Ingress Configuration:
+{{- range .Values.ingress.hosts }}
+  • https://{{ .host }}
+{{- end }}
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 MONITOR YOUR ROLLOUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Watch Rollout Progress:
+  kubectl argo rollouts get rollout {{ include "java-app-rollout.fullname" . }} --watch
+
+Check Rollout Status:
+  kubectl argo rollouts status {{ include "java-app-rollout.fullname" . }}
+
+View Rollout in Dashboard:
+  kubectl argo rollouts dashboard
+  # Open: http://localhost:3100/rollouts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚢 DEPLOYMENT WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{- if eq .Values.strategy.type "canary" }}
+
+1. Deploy New Version:
+   helm upgrade {{ .Release.Name }} ./java-app-rollout \
+     --set image.tag=NEW_VERSION \
+     --reuse-values
+
+2. Monitor Progress:
+   kubectl argo rollouts get rollout {{ include "java-app-rollout.fullname" . }} --watch
+
+3. Promote to Next Step:
+   kubectl argo rollouts promote {{ include "java-app-rollout.fullname" . }}
+
+4. Complete Rollout:
+   kubectl argo rollouts promote {{ include "java-app-rollout.fullname" . }} --full
+
+5. Rollback if Needed:
+   kubectl argo rollouts abort {{ include "java-app-rollout.fullname" . }}
+   kubectl argo rollouts undo {{ include "java-app-rollout.fullname" . }}
+
+{{- else if eq .Values.strategy.type "blueGreen" }}
+
+1. Deploy New Version:
+   helm upgrade {{ .Release.Name }} ./java-app-rollout \
+     --set image.tag=NEW_VERSION \
+     --reuse-values
+
+2. Test Preview Environment:
+   kubectl port-forward svc/{{ include "java-app-rollout.fullname" . }}-preview 8081:80
+
+3. Promote to Active:
+   kubectl argo rollouts promote {{ include "java-app-rollout.fullname" . }}
+
+4. Rollback if Needed:
+   kubectl argo rollouts abort {{ include "java-app-rollout.fullname" . }}
+   kubectl argo rollouts undo {{ include "java-app-rollout.fullname" . }}
+
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 USEFUL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+View Pods:
+  kubectl get pods -l app.kubernetes.io/name={{ include "java-app-rollout.name" . }}
+
+View Services:
+  kubectl get svc -l app.kubernetes.io/name={{ include "java-app-rollout.name" . }}
+
+Check Application Health:
+  kubectl port-forward svc/{{ include "java-app-rollout.fullname" . }}-stable 8081:{{ .Values.java.managementPort }}
+  curl http://localhost:8081/actuator/health
+
+View Application Logs:
+  kubectl logs -l app.kubernetes.io/name={{ include "java-app-rollout.name" . }} -f
+
+{{- if or .Values.canary.analysis.enabled .Values.blueGreen.analysis.enabled }}
+
+View Analysis Runs:
+  kubectl get analysisrun
+  kubectl describe analysisrun <name>
+
+{{- end }}
+
+Rollout History:
+  kubectl argo rollouts history {{ include "java-app-rollout.fullname" . }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ Happy Deploying! ✨
+
+For more information, check out:
+  • README.md - Comprehensive documentation
+  • INSTALL.md - Step-by-step installation guide
+  • examples/ - Sample values files
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

@@ -1,0 +1,110 @@
+{{- if or .Values.canary.analysis.enabled .Values.blueGreen.analysis.enabled }}
+{{- $prometheusAddr := "" }}
+{{- if eq .Values.strategy.type "canary" }}
+{{- $prometheusAddr = .Values.canary.analysis.prometheus.address }}
+{{- else }}
+{{- $prometheusAddr = .Values.blueGreen.analysis.prometheus.address }}
+{{- end }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "java-app-rollout.fullname" . }}-success-rate
+  labels:
+    {{- include "java-app-rollout.labels" . | nindent 4 }}
+spec:
+  args:
+  - name: service-name
+  - name: prometheus-url
+    value: {{ $prometheusAddr }}
+  metrics:
+  {{- if eq .Values.strategy.type "canary" }}
+  {{- if .Values.canary.analysis.metrics.successRate.enabled }}
+  - name: success-rate
+    interval: {{ .Values.canary.analysis.metrics.successRate.interval }}
+    successCondition: result >= {{ .Values.canary.analysis.metrics.successRate.threshold }}
+    failureLimit: {{ .Values.canary.analysis.metrics.successRate.failureLimit }}
+    provider:
+      prometheus:
+        address: "{{`{{ args.prometheus-url }}`}}"
+        query: |
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}",
+              status!~"5.."
+            }[5m]
+          ))
+          /
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          ))
+  {{- end }}
+  {{- if .Values.canary.analysis.metrics.avgResponseTime.enabled }}
+  - name: avg-response-time
+    interval: {{ .Values.canary.analysis.metrics.avgResponseTime.interval }}
+    successCondition: result <= {{ .Values.canary.analysis.metrics.avgResponseTime.threshold }}
+    failureLimit: {{ .Values.canary.analysis.metrics.avgResponseTime.failureLimit }}
+    provider:
+      prometheus:
+        address: "{{`{{ args.prometheus-url }}`}}"
+        query: |
+          sum(rate(
+            http_server_requests_seconds_sum{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          ))
+          /
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          )) * 1000
+  {{- end }}
+  {{- else if eq .Values.strategy.type "blueGreen" }}
+  {{- if .Values.blueGreen.analysis.metrics.successRate.enabled }}
+  - name: success-rate
+    interval: {{ .Values.blueGreen.analysis.metrics.successRate.interval }}
+    successCondition: result >= {{ .Values.blueGreen.analysis.metrics.successRate.threshold }}
+    failureLimit: {{ .Values.blueGreen.analysis.metrics.successRate.failureLimit }}
+    provider:
+      prometheus:
+        address: "{{`{{ args.prometheus-url }}`}}"
+        query: |
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}",
+              status!~"5.."
+            }[5m]
+          ))
+          /
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          ))
+  {{- end }}
+  {{- if .Values.blueGreen.analysis.metrics.avgResponseTime.enabled }}
+  - name: avg-response-time
+    interval: {{ .Values.blueGreen.analysis.metrics.avgResponseTime.interval }}
+    successCondition: result <= {{ .Values.blueGreen.analysis.metrics.avgResponseTime.threshold }}
+    failureLimit: {{ .Values.blueGreen.analysis.metrics.avgResponseTime.failureLimit }}
+    provider:
+      prometheus:
+        address: "{{`{{ args.prometheus-url }}`}}"
+        query: |
+          sum(rate(
+            http_server_requests_seconds_sum{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          ))
+          /
+          sum(rate(
+            http_server_requests_seconds_count{
+              service="{{`{{ args.service-name }}`}}"
+            }[5m]
+          )) * 1000
+  {{- end }}
+  {{- end }}
+{{- end }}
+

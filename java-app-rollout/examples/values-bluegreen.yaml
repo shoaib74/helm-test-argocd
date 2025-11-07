@@ -1,0 +1,150 @@
+# Example Values for Blue-Green Deployment Strategy
+
+strategy:
+  type: blueGreen
+
+replicaCount: 3
+
+image:
+  repository: acrdemonnbs.azurecr.io/my-java-app
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+# Azure Container Registry authentication
+imagePullSecrets:
+  - name: acr-secret
+
+# Blue-Green Strategy - Instant Switch
+blueGreen:
+  # Automatic promotion disabled - requires manual approval
+  autoPromotionEnabled: false
+  autoPromotionSeconds: 30
+  
+  # Time to wait before scaling down old version
+  scaleDownDelaySeconds: 60
+  
+  # Number of preview replicas (green environment)
+  previewReplicaCount: 3
+  
+  # Enable automated analysis before promotion
+  analysis:
+    enabled: true
+    prometheus:
+      address: "http://prometheus-server.monitoring.svc.cluster.local"
+    metrics:
+      successRate:
+        enabled: true
+        interval: 30s
+        threshold: 0.95  # 95% success rate required
+        failureLimit: 3
+      avgResponseTime:
+        enabled: true
+        interval: 30s
+        threshold: 500  # 500ms max average response time
+        failureLimit: 3
+
+# Java Application Configuration
+java:
+  javaOpts: "-Xms1g -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs"
+  springProfiles: "prod"
+  port: 8080
+  managementPort: 8081
+
+# Service Configuration
+service:
+  stable:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/actuator/health"
+  preview:
+    enabled: true
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+
+# Resource Management
+resources:
+  limits:
+    cpu: 2000m
+    memory: 3Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+# Health Checks for Spring Boot
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: management
+  initialDelaySeconds: 120
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: management
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: management
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 30
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Environment Variables
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "prod"
+  - name: SERVER_PORT
+    value: "8080"
+  - name: MANAGEMENT_SERVER_PORT
+    value: "8081"
+  - name: TZ
+    value: "Asia/Kolkata"
+
+# Pod Annotations for Prometheus
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8081"
+  prometheus.io/path: "/actuator/prometheus"
+
+# Anti-affinity for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - java-app-rollout
+          topologyKey: kubernetes.io/hostname
+
