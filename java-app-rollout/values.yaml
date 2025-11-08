@@ -43,7 +43,6 @@ java:
   javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   springProfiles: "prod"
   port: 8080
-  managementPort: 8080
 serviceAccount:
   create: true
 
@@ -75,7 +74,7 @@ resources:
 livenessProbe:
   httpGet:
     path: /health
-    port: 8080
+    port: http
   initialDelaySeconds: 120
   periodSeconds: 10
   timeoutSeconds: 5
@@ -84,7 +83,7 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /health
-    port: 8080
+    port: http
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
@@ -93,7 +92,7 @@ readinessProbe:
 startupProbe:
   httpGet:
     path: /health
-    port: 8080
+    port: http
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5

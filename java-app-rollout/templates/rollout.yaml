@@ -36,9 +36,6 @@ spec:
         - name: http
           containerPort: {{ .Values.java.port }}
           protocol: TCP
-        - name: management
-          containerPort: {{ .Values.java.managementPort }}
-          protocol: TCP
         env:
         - name: JAVA_OPTS
           value: {{ .Values.java.javaOpts | quote }}

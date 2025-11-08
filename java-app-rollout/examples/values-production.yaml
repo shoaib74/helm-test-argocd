@@ -48,7 +48,6 @@ java:
   javaOpts: "-Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs -XX:+PrintGCDetails -XX:+PrintGCDateStamps"
   springProfiles: "prod"
   port: 8080
-  managementPort: 8081
 
 # Production Services
 service:
@@ -98,7 +97,7 @@ resources:
 livenessProbe:
   httpGet:
     path: /actuator/health/liveness
-    port: management
+    port: http
   initialDelaySeconds: 180
   periodSeconds: 15
   timeoutSeconds: 5
@@ -108,7 +107,7 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /actuator/health/readiness
-    port: management
+    port: http
   initialDelaySeconds: 60
   periodSeconds: 10
   timeoutSeconds: 5
@@ -118,7 +117,7 @@ readinessProbe:
 startupProbe:
   httpGet:
     path: /actuator/health/liveness
-    port: management
+    port: http
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
@@ -144,8 +143,6 @@ env:
     value: "prod"
   - name: SERVER_PORT
     value: "8080"
-  - name: MANAGEMENT_SERVER_PORT
-    value: "8081"
   - name: TZ
     value: "UTC"
   - name: JAVA_SECURITY_EGD
@@ -173,7 +170,7 @@ envFrom:
 
 podAnnotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "8081"
+  prometheus.io/port: "8080"
   prometheus.io/path: "/actuator/prometheus"
 
 # Node Affinity - Run on specific node pool
