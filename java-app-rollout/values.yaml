@@ -43,15 +43,11 @@ java:
   javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   springProfiles: "prod"
   port: 8080
-  managementPort: 8081
 
 serviceAccount:
   create: true
 
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "8081"
-  prometheus.io/path: "/actuator/prometheus"
+podAnnotations: {}
 
 podSecurityContext: {}
 
@@ -78,8 +74,8 @@ resources:
 
 livenessProbe:
   httpGet:
-    path: /actuator/health/liveness
-    port: management
+    path: /health
+    port: 8080
   initialDelaySeconds: 120
   periodSeconds: 10
   timeoutSeconds: 5
@@ -87,8 +83,8 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /actuator/health/readiness
-    port: management
+    path: /health
+    port: 8080
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
@@ -96,8 +92,8 @@ readinessProbe:
 
 startupProbe:
   httpGet:
-    path: /actuator/health/liveness
-    port: management
+    path: /health
+    port: 8080
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
@@ -121,8 +117,6 @@ env:
     value: "prod"
   - name: SERVER_PORT
     value: "8080"
-  - name: MANAGEMENT_SERVER_PORT
-    value: "8081"
   - name: SPRING_DATASOURCE_URL
     value: "jdbc:mysql://my-mariadb:3306/userdb?useSSL=false&serverTimezone=UTC"
   - name: SPRING_DATASOURCE_USERNAME
