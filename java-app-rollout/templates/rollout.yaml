@@ -93,7 +93,10 @@ spec:
       {{- end }}
     {{- else if eq .Values.strategy.type "blueGreen" }}
     blueGreen:
-      activeService: {{ include "java-app-rollout.fullname" . }}
+      activeService: {{ include "java-app-rollout.fullname" . }}-active
+      {{- if .Values.service.preview.enabled }}
+      previewService: {{ include "java-app-rollout.fullname" . }}-preview
+      {{- end }}
       autoPromotionEnabled: {{ .Values.blueGreen.autoPromotionEnabled }}
       {{- if .Values.blueGreen.autoPromotionEnabled }}
       autoPromotionSeconds: {{ .Values.blueGreen.autoPromotionSeconds }}
@@ -103,12 +106,20 @@ spec:
       previewReplicaCount: {{ .Values.blueGreen.previewReplicaCount }}
       {{- end }}
       {{- if .Values.blueGreen.analysis.enabled }}
+      {{- if .Values.service.preview.enabled }}
+      prePromotionAnalysis:
+        templates:
+        - templateName: {{ include "java-app-rollout.fullname" . }}-success-rate
+        args:
+        - name: service-name
+          value: {{ include "java-app-rollout.fullname" . }}-preview
+      {{- end }}
       postPromotionAnalysis:
         templates:
         - templateName: {{ include "java-app-rollout.fullname" . }}-success-rate
         args:
         - name: service-name
-          value: {{ include "java-app-rollout.fullname" . }}
+          value: {{ include "java-app-rollout.fullname" . }}-active
       {{- end }}
     {{- end }}
 

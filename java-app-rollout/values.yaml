@@ -53,9 +53,15 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
-  type: LoadBalancer
-  port: 80
-  targetPort: 8080
+  active:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+  preview:
+    enabled: true
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
 
 resources:
   limits:
