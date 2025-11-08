@@ -16,6 +16,23 @@ image:
 
 imagePullSecrets: []
 
+secret:
+  enabled: false
+
+configMap:
+  enabled: false
+
+nameOverride: ""
+fullnameOverride: ""
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: false
+
+envFrom: []
+
 java:
   javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   springProfiles: "prod"
