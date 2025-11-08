@@ -64,9 +64,9 @@ blueGreen:
 replicaCount: 3
 
 image:
-  repository: your-registry.azurecr.io/java-app
+  repository: acrdemonbs.azurecr.io/crud-app
   pullPolicy: IfNotPresent
-  tag: "1.0.0"
+  tag: "20251108.18"
 
 imagePullSecrets: []
 nameOverride: ""
