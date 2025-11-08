@@ -91,7 +91,7 @@ readinessProbe:
 
 startupProbe:
   httpGet:
-    path: /health
+    path: /actuator/health/readiness
     port: http
   initialDelaySeconds: 0
   periodSeconds: 10
