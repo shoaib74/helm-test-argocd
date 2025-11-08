@@ -1,11 +1,17 @@
 strategy:
   type: blueGreen
 
+canary:
+  analysis:
+    enabled: false
+
 blueGreen:
   autoPromotionEnabled: false
   autoPromotionSeconds: 30
   scaleDownDelaySeconds: 60
   previewReplicaCount: 1
+  analysis:
+    enabled: false
 
 replicaCount: 1
 
@@ -130,7 +136,7 @@ env:
   - name: SPRING_DATASOURCE_USERNAME
     value: "root"
   - name: SPRING_DATASOURCE_PASSWORD
-    value: "rootpass"
+    value: "ZDUjdJIwc4mRInpK"
   - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
     value: "com.mysql.jdbc.Driver"
   - name: SPRING_JPA_HIBERNATE_DDL_AUTO
