@@ -1,66 +1,12 @@
-# Default values for java-app-rollout
-
-# Deployment Strategy: canary or blueGreen
 strategy:
-  type: canary  # Options: canary, blueGreen
+  type: blueGreen
 
-# Canary Strategy Configuration
-canary:
-  maxSurge: "25%"
-  maxUnavailable: 0
-  steps:
-    - setWeight: 20
-    - pause: {duration: 30s}
-    - setWeight: 40
-    - pause: {duration: 30s}
-    - setWeight: 60
-    - pause: {duration: 30s}
-    - setWeight: 80
-    - pause: {duration: 30s}
-  # Analysis for automated promotion/rollback
-  analysis:
-    enabled: false
-    successfulRunHistoryLimit: 5
-    unsuccessfulRunHistoryLimit: 3
-    startingStep: 2
-    prometheus:
-      address: "http://prometheus-server.monitoring.svc.cluster.local"
-    metrics:
-      successRate:
-        enabled: true
-        interval: 30s
-        threshold: 0.95
-        failureLimit: 3
-      avgResponseTime:
-        enabled: true
-        interval: 30s
-        threshold: 500  # milliseconds
-        failureLimit: 3
-
-# Blue-Green Strategy Configuration
 blueGreen:
   autoPromotionEnabled: false
   autoPromotionSeconds: 30
-  scaleDownDelaySeconds: 30
+  scaleDownDelaySeconds: 60
   previewReplicaCount: 1
-  # Analysis for automated promotion
-  analysis:
-    enabled: false
-    prometheus:
-      address: "http://prometheus-server.monitoring.svc.cluster.local"
-    metrics:
-      successRate:
-        enabled: true
-        interval: 30s
-        threshold: 0.95
-        failureLimit: 3
-      avgResponseTime:
-        enabled: true
-        interval: 30s
-        threshold: 500  # milliseconds
-        failureLimit: 3
 
-# Application Configuration
 replicaCount: 1
 
 image:
@@ -69,39 +15,26 @@ image:
   tag: "20251108.18"
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
-# Java Application Specific
 java:
-  # JVM Options
   javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-  # Spring Boot profiles
   springProfiles: "prod"
-  # Application port
   port: 8080
-  # Management/Actuator port
   managementPort: 8081
 
-# Service Account
 serviceAccount:
   create: true
-  annotations: {}
-  name: ""
 
-# Pod Annotations
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8081"
   prometheus.io/path: "/actuator/prometheus"
 
-# Pod Security Context
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   fsGroup: 1000
 
-# Container Security Context
 securityContext:
   capabilities:
     drop:
@@ -109,46 +42,17 @@ securityContext:
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
 
-# Services
 service:
-  # Stable Service (for production traffic)
   stable:
     type: LoadBalancer
     port: 80
     targetPort: 8080
-    annotations: {}
-  
-  # Canary Service (for canary traffic)
-  canary:
-    enabled: true
-    type: ClusterIP
-    port: 80
-    targetPort: 8080
-  
-  # Preview Service (for Blue-Green)
   preview:
     enabled: true
     type: ClusterIP
     port: 80
     targetPort: 8080
 
-# Ingress Configuration
-ingress:
-  enabled: false
-  className: "nginx"
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: java-app.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: java-app-tls
-      hosts:
-        - java-app.example.com
-
-# Resource Limits
 resources:
   limits:
     cpu: 2000m
@@ -157,7 +61,6 @@ resources:
     cpu: 200m
     memory: 500Mi
 
-# Liveness Probe (Spring Boot Actuator)
 livenessProbe:
   httpGet:
     path: /actuator/health/liveness
@@ -165,10 +68,8 @@ livenessProbe:
   initialDelaySeconds: 120
   periodSeconds: 10
   timeoutSeconds: 5
-  successThreshold: 1
   failureThreshold: 3
 
-# Readiness Probe (Spring Boot Actuator)
 readinessProbe:
   httpGet:
     path: /actuator/health/readiness
@@ -176,10 +77,8 @@ readinessProbe:
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
-  successThreshold: 1
   failureThreshold: 3
 
-# Startup Probe (for slow-starting apps)
 startupProbe:
   httpGet:
     path: /actuator/health/liveness
@@ -187,24 +86,8 @@ startupProbe:
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
-  successThreshold: 1
   failureThreshold: 30
 
-# Autoscaling
-autoscaling:
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 70
-  targetMemoryUtilizationPercentage: 80
-
-# Node Selector
-nodeSelector: {}
-
-# Tolerations
-tolerations: []
-
-# Affinity
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
@@ -218,7 +101,6 @@ affinity:
                   - java-app-rollout
           topologyKey: kubernetes.io/hostname
 
-# Environment Variables
 env:
   - name: SPRING_PROFILES_ACTIVE
     value: "prod"
@@ -226,44 +108,30 @@ env:
     value: "8080"
   - name: MANAGEMENT_SERVER_PORT
     value: "8081"
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:mysql://my-mariadb:3306/userdb?useSSL=false&serverTimezone=UTC"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "root"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "rootpass"
+  - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+    value: "com.mysql.jdbc.Driver"
+  - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+    value: "update"
+  - name: SPRING_JPA_SHOW_SQL
+    value: "false"
 
-# Environment Variables from ConfigMap
-envFrom: []
-#  - configMapRef:
-#      name: app-config
-#  - secretRef:
-#      name: app-secrets
-
-# ConfigMap Data
-configMap:
-  enabled: false
-  data: {}
-#    application.properties: |
-#      spring.application.name=java-app
-#      logging.level.root=INFO
-
-# Secret Data (base64 encoded)
-secret:
-  enabled: false
-  data: {}
-#    database-password: cGFzc3dvcmQ=
-
-# Volume Mounts
 volumeMounts:
   - name: tmp
     mountPath: /tmp
   - name: logs
     mountPath: /app/logs
 
-# Volumes
 volumes:
   - name: tmp
     emptyDir: {}
   - name: logs
     emptyDir: {}
 
-# Pod Disruption Budget
 podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
-
+  enabled: false
