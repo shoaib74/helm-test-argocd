@@ -43,7 +43,7 @@ java:
   javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
   springProfiles: "prod"
   port: 8080
-
+  managementPort: 8080
 serviceAccount:
   create: true
 
