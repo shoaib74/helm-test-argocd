@@ -61,7 +61,7 @@ blueGreen:
         failureLimit: 3
 
 # Application Configuration
-replicaCount: 3
+replicaCount: 1
 
 image:
   repository: acrdemonbs.azurecr.io/crud-app
@@ -154,8 +154,8 @@ resources:
     cpu: 2000m
     memory: 2Gi
   requests:
-    cpu: 500m
-    memory: 1Gi
+    cpu: 200m
+    memory: 500Mi
 
 # Liveness Probe (Spring Boot Actuator)
 livenessProbe:
