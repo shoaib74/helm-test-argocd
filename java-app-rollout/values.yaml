@@ -53,17 +53,9 @@ podAnnotations:
   prometheus.io/port: "8081"
   prometheus.io/path: "/actuator/prometheus"
 
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
+podSecurityContext: {}
 
-securityContext:
-  capabilities:
-    drop:
-    - ALL
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
+securityContext: {}
 
 service:
   stable:
@@ -144,17 +136,9 @@ env:
   - name: SPRING_JPA_SHOW_SQL
     value: "false"
 
-volumeMounts:
-  - name: tmp
-    mountPath: /tmp
-  - name: logs
-    mountPath: /app/logs
+volumeMounts: []
 
-volumes:
-  - name: tmp
-    emptyDir: {}
-  - name: logs
-    emptyDir: {}
+volumes: []
 
 podDisruptionBudget:
   enabled: false
