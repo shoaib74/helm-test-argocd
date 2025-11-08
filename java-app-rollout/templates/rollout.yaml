@@ -75,8 +75,6 @@ spec:
     canary:
       maxSurge: {{ .Values.canary.maxSurge }}
       maxUnavailable: {{ .Values.canary.maxUnavailable }}
-      canaryService: {{ include "java-app-rollout.fullname" . }}-canary
-      stableService: {{ include "java-app-rollout.fullname" . }}-stable
       {{- if .Values.ingress.enabled }}
       trafficRouting:
         nginx:
@@ -91,12 +89,11 @@ spec:
         startingStep: {{ .Values.canary.analysis.startingStep }}
         args:
         - name: service-name
-          value: {{ include "java-app-rollout.fullname" . }}-canary
+          value: {{ include "java-app-rollout.fullname" . }}
       {{- end }}
     {{- else if eq .Values.strategy.type "blueGreen" }}
     blueGreen:
-      activeService: {{ include "java-app-rollout.fullname" . }}-stable
-      previewService: {{ include "java-app-rollout.fullname" . }}-preview
+      activeService: {{ include "java-app-rollout.fullname" . }}
       autoPromotionEnabled: {{ .Values.blueGreen.autoPromotionEnabled }}
       {{- if .Values.blueGreen.autoPromotionEnabled }}
       autoPromotionSeconds: {{ .Values.blueGreen.autoPromotionSeconds }}
@@ -106,18 +103,12 @@ spec:
       previewReplicaCount: {{ .Values.blueGreen.previewReplicaCount }}
       {{- end }}
       {{- if .Values.blueGreen.analysis.enabled }}
-      prePromotionAnalysis:
-        templates:
-        - templateName: {{ include "java-app-rollout.fullname" . }}-success-rate
-        args:
-        - name: service-name
-          value: {{ include "java-app-rollout.fullname" . }}-preview
       postPromotionAnalysis:
         templates:
         - templateName: {{ include "java-app-rollout.fullname" . }}-success-rate
         args:
         - name: service-name
-          value: {{ include "java-app-rollout.fullname" . }}-stable
+          value: {{ include "java-app-rollout.fullname" . }}
       {{- end }}
     {{- end }}
 

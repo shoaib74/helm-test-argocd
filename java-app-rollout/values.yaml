@@ -6,9 +6,9 @@ canary:
     enabled: false
 
 blueGreen:
-  autoPromotionEnabled: false
-  autoPromotionSeconds: 30
-  scaleDownDelaySeconds: 60
+  autoPromotionEnabled: true
+  autoPromotionSeconds: 900
+  scaleDownDelaySeconds: 900
   previewReplicaCount: 1
   analysis:
     enabled: false
@@ -53,15 +53,9 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
-  stable:
-    type: LoadBalancer
-    port: 80
-    targetPort: 8080
-  preview:
-    enabled: true
-    type: ClusterIP
-    port: 80
-    targetPort: 8080
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
 
 resources:
   limits:

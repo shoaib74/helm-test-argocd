@@ -1,60 +1,21 @@
 ---
-# Stable Service (Production Traffic)
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "java-app-rollout.fullname" . }}-stable
+  name: {{ include "java-app-rollout.fullname" . }}
   labels:
     {{- include "java-app-rollout.labels" . | nindent 4 }}
-  {{- with .Values.service.stable.annotations }}
+  {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.service.stable.type }}
+  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.stable.port }}
-      targetPort: {{ .Values.service.stable.targetPort }}
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
       name: http
   selector:
     {{- include "java-app-rollout.selectorLabels" . | nindent 4 }}
----
-{{- if and (eq .Values.strategy.type "canary") .Values.service.canary.enabled }}
-# Canary Service (Canary Traffic)
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "java-app-rollout.fullname" . }}-canary
-  labels:
-    {{- include "java-app-rollout.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.canary.type }}
-  ports:
-    - port: {{ .Values.service.canary.port }}
-      targetPort: {{ .Values.service.canary.targetPort }}
-      protocol: TCP
-      name: http
-  selector:
-    {{- include "java-app-rollout.selectorLabels" . | nindent 4 }}
-{{- end }}
----
-{{- if and (eq .Values.strategy.type "blueGreen") .Values.service.preview.enabled }}
-# Preview Service (Blue-Green Preview)
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "java-app-rollout.fullname" . }}-preview
-  labels:
-    {{- include "java-app-rollout.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.preview.type }}
-  ports:
-    - port: {{ .Values.service.preview.port }}
-      targetPort: {{ .Values.service.preview.targetPort }}
-      protocol: TCP
-      name: http
-  selector:
-    {{- include "java-app-rollout.selectorLabels" . | nindent 4 }}
-{{- end }}
 
