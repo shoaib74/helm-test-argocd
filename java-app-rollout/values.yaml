@@ -18,7 +18,7 @@ replicaCount: 1
 image:
   repository: acrdemonbs.azurecr.io/crud-app
   pullPolicy: IfNotPresent
-  tag: "20251109.1"
+  tag: "20251109.2"
 
 imagePullSecrets: []
 
